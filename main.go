@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sort"
 	"strings"
 	"time"
 
@@ -44,6 +45,18 @@ type Card struct {
 
 type Deck []Card
 type Hand []Card
+
+// Define a custom sorting function for cards
+func sortCards(cards []Card) {
+	sort.Slice(cards, func(i, j int) bool {
+		// Sort by suit first
+		if cards[i].Suit != cards[j].Suit {
+			return cards[i].Suit < cards[j].Suit
+		}
+		// Then sort by descending order of points system
+		return cards[i].Rank > cards[j].Rank
+	})
+}
 
 func NewDeck() Deck {
 	ranks := []Rank{Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace}
@@ -137,6 +150,8 @@ func main() {
 				hands := Deal(deck, 4) // Assuming 4 players
 				playerID := 1          // Change this to the player whose cards you want to display
 				playerHand := hands[playerID-1]
+
+				sortCards(playerHand) // Sort the player's hand
 
 				var rows [][]tgbotapi.InlineKeyboardButton
 				for _, card := range playerHand {
