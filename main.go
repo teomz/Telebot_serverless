@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -28,12 +29,33 @@ func main() {
 		if update.Message == nil { // Ignore any non-Message updates.
 			continue
 		}
-		// Print received message text and sender username.
+		// Log the received message text and sender username.
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		// Respond to the user.
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hello! I am your Telegram bot.")
-		_, err := bot.Send(msg)
-		if err != nil {
+
+		// Extract the command from the message text.
+		command := strings.Split(update.Message.Text, " ")[0]
+
+		// Respond to the user based on the command.
+		var responseText string
+		switch command {
+		case "/start":
+			responseText = "Welcome to the Bridge bot! Use /help to see available commands."
+		case "/join":
+			responseText = "You've joined the game. Waiting for more players..."
+		case "/leave":
+			responseText = "You've left the game."
+		case "/help":
+			responseText = "Available commands:\n/start - start interacting with the bot\n/join - join a poker game\n/leave - leave the current game\n/fold - fold your hand\n/check - check during your turn"
+		case "/fold":
+			responseText = "You've folded."
+		case "/check":
+			responseText = "You've checked."
+		default:
+			responseText = "Sorry, I didn't recognize that command."
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, responseText)
+		if _, err := bot.Send(msg); err != nil {
 			log.Printf("Error sending message: %v", err)
 		}
 	}
