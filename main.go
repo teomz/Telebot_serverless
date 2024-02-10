@@ -46,7 +46,14 @@ type Card struct {
 type Deck []Card
 type Hand []Card
 
+type GameSession struct {
+	Players []tgbotapi.User
+	Deck    Deck
+	Hands   []Hand
+}
+
 var gameInProgress bool // Variable to track if a game is in progress
+var session GameSession
 
 func sortCards(cards []Card) {
 	sort.Slice(cards, func(i, j int) bool {
@@ -121,6 +128,34 @@ func rankEmoji(rank Rank) string {
 	}
 }
 
+func startGame(bot *tgbotapi.BotAPI, chatID int64) {
+	if !gameInProgress {
+		log.Printf("Game session started")
+		gameInProgress = true
+
+		// Shuffle and deal cards
+		session.Deck = NewDeck()
+		Shuffle(session.Deck)
+		session.Hands = Deal(session.Deck, len(session.Players))
+
+		// Notify players
+		for i, player := range session.Players {
+			playerHand := session.Hands[i]
+			sortCards(playerHand)
+			var rows [][]tgbotapi.InlineKeyboardButton
+			for _, card := range playerHand {
+				button := tgbotapi.NewInlineKeyboardButtonData(suitEmoji(card.Suit)+" - "+rankEmoji(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
+				row := []tgbotapi.InlineKeyboardButton{button}
+				rows = append(rows, row)
+			}
+			keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+			msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Your hand, %s:", player.UserName))
+			msg.ReplyMarkup = keyboard
+			bot.Send(msg)
+		}
+	}
+}
+
 func main() {
 	bot, err := tgbotapi.NewBotAPI("6863492345:AAH-ak_depbfolBuCoI7PzfHu4ajJZ0L030") // Replace with your Bot Token
 	if err != nil {
@@ -143,34 +178,19 @@ func main() {
 			callbackData := update.CallbackQuery.Data
 			if callbackData == "play_game" {
 				if !gameInProgress {
-					// This is a placeholder for starting the game logic
-					log.Printf("Game started by user: %s", update.CallbackQuery.From.UserName)
-					gameInProgress = true
-
-					// Here you could shuffle and deal cards, then notify players
-					deck := NewDeck()
-					Shuffle(deck)
-					hands := Deal(deck, 4) // Assuming 4 players
-					playerID := 1          // Change this to the player whose cards you want to display
-					playerHand := hands[playerID-1]
-
-					// Sort the player's hand
-					sortCards(playerHand)
-
-					var rows [][]tgbotapi.InlineKeyboardButton
-					for _, card := range playerHand {
-						button := tgbotapi.NewInlineKeyboardButtonData(suitEmoji(card.Suit)+" - "+rankEmoji(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
-						row := []tgbotapi.InlineKeyboardButton{button}
-						rows = append(rows, row)
+					// Create a new session if none exists
+					if session.Players == nil {
+						session.Players = make([]tgbotapi.User, 0)
 					}
-					keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+					// Add player to the session
+					session.Players = append(session.Players, *update.CallbackQuery.From)
 
-					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Your hand:")
-					msg.ReplyMarkup = keyboard
-					bot.Send(msg)
-
-					callbackResp := tgbotapi.NewCallback(update.CallbackQuery.ID, "Game started!")
-					bot.AnswerCallbackQuery(callbackResp)
+					if len(session.Players) == 4 {
+						startGame(bot, update.CallbackQuery.Message.Chat.ID)
+					} else {
+						msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Waiting for players to join... Current players: "+fmt.Sprint(len(session.Players)))
+						bot.Send(msg)
+					}
 				}
 			}
 		} else if update.Message != nil {
@@ -201,20 +221,25 @@ func main() {
 				bot.Send(msg)
 			case "/play_game":
 				if !gameInProgress {
-					// Send a message with a "Play Bridge" button to start the game
-					keyboard := tgbotapi.NewInlineKeyboardMarkup(
-						tgbotapi.NewInlineKeyboardRow(
-							tgbotapi.NewInlineKeyboardButtonData("🎲 Play Bridge", "play_game"),
-						),
-					)
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Press 'Play Bridge' to start the game.")
-					msg.ReplyMarkup = keyboard
-					bot.Send(msg)
+					// Create a new session if none exists
+					if session.Players == nil {
+						session.Players = make([]tgbotapi.User, 0)
+					}
+					// Add player to the session
+					session.Players = append(session.Players, *update.Message.From)
+
+					if len(session.Players) == 4 {
+						startGame(bot, update.Message.Chat.ID)
+					} else {
+						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Waiting for players to join... Current players: "+fmt.Sprint(len(session.Players)))
+						bot.Send(msg)
+					}
 				}
 			case "/leave":
 				if gameInProgress {
 					// Logic to handle leaving the game
 					gameInProgress = false
+					session = GameSession{} // Clear session data
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "You have left the game.")
 					bot.Send(msg)
 				} else {
