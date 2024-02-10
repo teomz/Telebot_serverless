@@ -11,7 +11,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// Constants and type definitions for Card, Deck, etc.
 type Suit string
 type Rank int
 
@@ -52,16 +51,14 @@ type GameSession struct {
 	Hands   []Hand
 }
 
-var gameInProgress bool // Variable to track if a game is in progress
+var gameInProgress bool
 var session GameSession
 
 func sortCards(cards []Card) {
 	sort.Slice(cards, func(i, j int) bool {
-		// Sort by suit first
 		if cards[i].Suit != cards[j].Suit {
 			return cards[i].Suit < cards[j].Suit
 		}
-		// Then sort by descending order of points system
 		return cards[i].Rank > cards[j].Rank
 	})
 }
@@ -97,7 +94,6 @@ func Deal(deck Deck, numPlayers int) []Hand {
 	return hands
 }
 
-// Define a function to get the emoji representation of the suit
 func suitEmoji(suit Suit) string {
 	switch suit {
 	case Spades:
@@ -109,23 +105,57 @@ func suitEmoji(suit Suit) string {
 	case Clubs:
 		return "♣️"
 	default:
-		return string(suit)
+		return ""
 	}
 }
 
 func rankEmoji(rank Rank) string {
 	switch rank {
 	case Ace:
-		return "🅰️"
+		return "A"
 	case King:
-		return "👑"
+		return "K"
 	case Queen:
-		return "👸"
+		return "Q"
 	case Jack:
-		return "🎩"
+		return "J"
 	default:
 		return fmt.Sprintf("%d", rank)
 	}
+}
+
+func promptPartnerSelection(bot *tgbotapi.BotAPI, winnerUserID int64) {
+	// Prompt the user to select a suit
+	suits := []Suit{Spades, Hearts, Diamonds, Clubs}
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, suit := range suits {
+		buttonText := fmt.Sprintf("Select %s", suitEmoji(suit))
+		callbackData := fmt.Sprintf("select_partner_suit_%s", suit)
+		button := tgbotapi.NewInlineKeyboardButtonData(buttonText, callbackData)
+		row := []tgbotapi.InlineKeyboardButton{button}
+		rows = append(rows, row)
+	}
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	msg := tgbotapi.NewMessage(winnerUserID, "Select the suit for your partner:")
+	msg.ReplyMarkup = keyboard
+	bot.Send(msg)
+}
+
+func promptRankSelection(bot *tgbotapi.BotAPI, winnerUserID int64, chosenSuit Suit) {
+	// Prompt the user to select a rank
+	ranks := []Rank{Ten, Jack, Queen, King, Ace}
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, rank := range ranks {
+		buttonText := fmt.Sprintf("Select %s", rankEmoji(rank))
+		callbackData := fmt.Sprintf("select_partner_rank_%s_%d", chosenSuit, rank)
+		button := tgbotapi.NewInlineKeyboardButtonData(buttonText, callbackData)
+		row := []tgbotapi.InlineKeyboardButton{button}
+		rows = append(rows, row)
+	}
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+	msg := tgbotapi.NewMessage(winnerUserID, "Select the rank for your partner:")
+	msg.ReplyMarkup = keyboard
+	bot.Send(msg)
 }
 
 func startGame(bot *tgbotapi.BotAPI, chatID int64) {
@@ -133,31 +163,33 @@ func startGame(bot *tgbotapi.BotAPI, chatID int64) {
 		log.Printf("Game session started")
 		gameInProgress = true
 
-		// Shuffle and deal cards
 		session.Deck = NewDeck()
 		Shuffle(session.Deck)
 		session.Hands = Deal(session.Deck, len(session.Players))
 
-		// Notify players
-		for i, player := range session.Players {
+		for i := range session.Players {
 			playerHand := session.Hands[i]
 			sortCards(playerHand)
 			var rows [][]tgbotapi.InlineKeyboardButton
 			for _, card := range playerHand {
-				button := tgbotapi.NewInlineKeyboardButtonData(suitEmoji(card.Suit)+" - "+rankEmoji(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
+				buttonText := fmt.Sprintf("%s%s", suitEmoji(card.Suit), rankEmoji(card.Rank))
+				callbackData := fmt.Sprintf("card_%s_%d", card.Suit, card.Rank)
+				button := tgbotapi.NewInlineKeyboardButtonData(buttonText, callbackData)
 				row := []tgbotapi.InlineKeyboardButton{button}
 				rows = append(rows, row)
 			}
 			keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
-			msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Your hand, %s:", player.UserName))
+			msg := tgbotapi.NewMessage(chatID, "Your hand:")
 			msg.ReplyMarkup = keyboard
 			bot.Send(msg)
 		}
+		// Prompt the winner to select the partner's suit
+		promptPartnerSelection(bot, int64(session.Players[0].ID))
 	}
 }
 
 func main() {
-	bot, err := tgbotapi.NewBotAPI("6863492345:AAH-ak_depbfolBuCoI7PzfHu4ajJZ0L030") // Replace with your Bot Token
+	bot, err := tgbotapi.NewBotAPI("6863492345:AAH-ak_depbfolBuCoI7PzfHu4ajJZ0L030")
 	if err != nil {
 		log.Fatalf("Error creating bot: %v", err)
 	}
@@ -176,22 +208,30 @@ func main() {
 	for update := range updates {
 		if update.CallbackQuery != nil {
 			callbackData := update.CallbackQuery.Data
-			if callbackData == "play_game" {
-				if !gameInProgress {
-					// Create a new session if none exists
-					if session.Players == nil {
-						session.Players = make([]tgbotapi.User, 0)
-					}
-					// Add player to the session
-					session.Players = append(session.Players, *update.CallbackQuery.From)
 
-					if len(session.Players) == 4 {
-						startGame(bot, update.CallbackQuery.Message.Chat.ID)
-					} else {
-						msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Waiting for players to join... Current players: "+fmt.Sprint(len(session.Players)))
-						bot.Send(msg)
-					}
+			if strings.HasPrefix(callbackData, "select_partner_suit_") {
+				selectedSuit := strings.TrimPrefix(callbackData, "select_partner_suit_")
+
+				var suit Suit
+				switch selectedSuit {
+				case "Spades":
+					suit = Spades
+				case "Hearts":
+					suit = Hearts
+				case "Diamonds":
+					suit = Diamonds
+				case "Clubs":
+					suit = Clubs
 				}
+
+				promptRankSelection(bot, int64(update.CallbackQuery.From.ID), suit)
+			}
+
+			_, err := bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
+				CallbackQueryID: update.CallbackQuery.ID,
+			})
+			if err != nil {
+				log.Printf("Error clearing callback query: %v", err)
 			}
 		} else if update.Message != nil {
 			command := strings.Split(update.Message.Text, " ")[0]
@@ -200,7 +240,10 @@ func main() {
 			case "/start":
 				msgText := "Welcome to the Bridge bot! Use /help to see available commands."
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
-				bot.Send(msg)
+				_, err := bot.Send(msg)
+				if err != nil {
+					log.Printf("Error sending message: %v", err)
+				}
 
 				// Sending a separate message to prompt the user to start the game
 				keyboard := tgbotapi.NewInlineKeyboardMarkup(
@@ -210,7 +253,10 @@ func main() {
 				)
 				startMsg := tgbotapi.NewMessage(update.Message.Chat.ID, "Press 'Play Bridge' to start the game.")
 				startMsg.ReplyMarkup = keyboard
-				bot.Send(startMsg)
+				_, err = bot.Send(startMsg)
+				if err != nil {
+					log.Printf("Error sending message: %v", err)
+				}
 
 			case "/help":
 				msgText := "Available commands:\n" +
@@ -218,7 +264,10 @@ func main() {
 					"/help - Get help and see available commands\n" +
 					"/play_game - Start a new game of Bridge"
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
-				bot.Send(msg)
+				_, err := bot.Send(msg)
+				if err != nil {
+					log.Printf("Error sending message: %v", err)
+				}
 			case "/play_game":
 				if !gameInProgress {
 					// Create a new session if none exists
@@ -232,7 +281,10 @@ func main() {
 						startGame(bot, update.Message.Chat.ID)
 					} else {
 						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Waiting for players to join... Current players: "+fmt.Sprint(len(session.Players)))
-						bot.Send(msg)
+						_, err := bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending message: %v", err)
+						}
 					}
 				}
 			case "/leave":
@@ -241,15 +293,24 @@ func main() {
 					gameInProgress = false
 					session = GameSession{} // Clear session data
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "You have left the game.")
-					bot.Send(msg)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending message: %v", err)
+					}
 				} else {
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "There is no game in progress.")
-					bot.Send(msg)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending message: %v", err)
+					}
 				}
 			default:
 				msgText := "Sorry, I didn't recognize that command. Use /help to see available commands."
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
-				bot.Send(msg)
+				_, err := bot.Send(msg)
+				if err != nil {
+					log.Printf("Error sending message: %v", err)
+				}
 			}
 		}
 	}
