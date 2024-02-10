@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -225,12 +226,31 @@ func main() {
 				}
 
 				promptRankSelection(bot, int64(update.CallbackQuery.From.ID), suit)
+			} else if strings.HasPrefix(callbackData, "select_partner_rank_") {
+				parts := strings.Split(callbackData, "_")
+				if len(parts) == 5 {
+					selectedSuit := parts[3]
+					selectedRank := parts[4]
+
+					rankInt, err := strconv.Atoi(selectedRank)
+					if err != nil {
+						log.Printf("Error converting rank to integer: %v", err)
+					} else {
+						selectedRankType := Rank(rankInt)
+
+						confirmationMsg := fmt.Sprintf("You have selected the %s of %s as your partner's card.",
+							rankEmoji(selectedRankType), suitEmoji(Suit(selectedSuit)))
+						msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, confirmationMsg)
+						if _, err := bot.Send(msg); err != nil {
+							log.Printf("Error sending confirmation message: %v", err)
+						}
+					}
+				}
 			}
 
-			_, err := bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
+			if _, err := bot.AnswerCallbackQuery(tgbotapi.CallbackConfig{
 				CallbackQueryID: update.CallbackQuery.ID,
-			})
-			if err != nil {
+			}); err != nil {
 				log.Printf("Error clearing callback query: %v", err)
 			}
 		} else if update.Message != nil {
