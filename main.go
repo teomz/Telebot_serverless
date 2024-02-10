@@ -238,7 +238,7 @@ func main() {
 					} else {
 						selectedRankType := Rank(rankInt)
 
-						confirmationMsg := fmt.Sprintf("You have selected the %s of %s as your partner's card.",
+						confirmationMsg := fmt.Sprintf("The partner is  %s of %s.",
 							rankEmoji(selectedRankType), suitEmoji(Suit(selectedSuit)))
 						msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, confirmationMsg)
 						if _, err := bot.Send(msg); err != nil {
