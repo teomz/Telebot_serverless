@@ -176,6 +176,17 @@ func main() {
 				msgText := "Welcome to the Bridge bot! Use /help to see available commands."
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				bot.Send(msg)
+
+				// Sending a separate message to prompt the user to start the game
+				keyboard := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData("🎲 Play Bridge", "play_game"),
+					),
+				)
+				startMsg := tgbotapi.NewMessage(update.Message.Chat.ID, "Press 'Play Bridge' to start the game.")
+				startMsg.ReplyMarkup = keyboard
+				bot.Send(startMsg)
+
 			case "/help":
 				msgText := "Available commands:\n" +
 					"/start - Start interacting with the bot\n" +
