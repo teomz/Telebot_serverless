@@ -46,7 +46,8 @@ type Card struct {
 type Deck []Card
 type Hand []Card
 
-// Define a custom sorting function for cards
+var gameInProgress bool // Variable to track if a game is in progress
+
 func sortCards(cards []Card) {
 	sort.Slice(cards, func(i, j int) bool {
 		// Sort by suit first
@@ -141,32 +142,36 @@ func main() {
 		if update.CallbackQuery != nil {
 			callbackData := update.CallbackQuery.Data
 			if callbackData == "play_game" {
-				// This is a placeholder for starting the game logic
-				log.Printf("Game started by user: %s", update.CallbackQuery.From.UserName)
+				if !gameInProgress {
+					// This is a placeholder for starting the game logic
+					log.Printf("Game started by user: %s", update.CallbackQuery.From.UserName)
+					gameInProgress = true
 
-				// Here you could shuffle and deal cards, then notify players
-				deck := NewDeck()
-				Shuffle(deck)
-				hands := Deal(deck, 4) // Assuming 4 players
-				playerID := 1          // Change this to the player whose cards you want to display
-				playerHand := hands[playerID-1]
+					// Here you could shuffle and deal cards, then notify players
+					deck := NewDeck()
+					Shuffle(deck)
+					hands := Deal(deck, 4) // Assuming 4 players
+					playerID := 1          // Change this to the player whose cards you want to display
+					playerHand := hands[playerID-1]
 
-				sortCards(playerHand) // Sort the player's hand
+					// Sort the player's hand
+					sortCards(playerHand)
 
-				var rows [][]tgbotapi.InlineKeyboardButton
-				for _, card := range playerHand {
-					button := tgbotapi.NewInlineKeyboardButtonData(suitEmoji(card.Suit)+" - "+rankEmoji(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
-					row := []tgbotapi.InlineKeyboardButton{button}
-					rows = append(rows, row)
+					var rows [][]tgbotapi.InlineKeyboardButton
+					for _, card := range playerHand {
+						button := tgbotapi.NewInlineKeyboardButtonData(suitEmoji(card.Suit)+" - "+rankEmoji(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
+						row := []tgbotapi.InlineKeyboardButton{button}
+						rows = append(rows, row)
+					}
+					keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Your hand:")
+					msg.ReplyMarkup = keyboard
+					bot.Send(msg)
+
+					callbackResp := tgbotapi.NewCallback(update.CallbackQuery.ID, "Game started!")
+					bot.AnswerCallbackQuery(callbackResp)
 				}
-				keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
-
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Your hand:")
-				msg.ReplyMarkup = keyboard
-				bot.Send(msg)
-
-				callbackResp := tgbotapi.NewCallback(update.CallbackQuery.ID, "Game started!")
-				bot.AnswerCallbackQuery(callbackResp)
 			}
 		} else if update.Message != nil {
 			command := strings.Split(update.Message.Text, " ")[0]
@@ -195,15 +200,27 @@ func main() {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				bot.Send(msg)
 			case "/play_game":
-				// Send a message with a "Play Bridge" button to start the game
-				keyboard := tgbotapi.NewInlineKeyboardMarkup(
-					tgbotapi.NewInlineKeyboardRow(
-						tgbotapi.NewInlineKeyboardButtonData("🎲 Play Bridge", "play_game"),
-					),
-				)
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Press 'Play Bridge' to start the game.")
-				msg.ReplyMarkup = keyboard
-				bot.Send(msg)
+				if !gameInProgress {
+					// Send a message with a "Play Bridge" button to start the game
+					keyboard := tgbotapi.NewInlineKeyboardMarkup(
+						tgbotapi.NewInlineKeyboardRow(
+							tgbotapi.NewInlineKeyboardButtonData("🎲 Play Bridge", "play_game"),
+						),
+					)
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Press 'Play Bridge' to start the game.")
+					msg.ReplyMarkup = keyboard
+					bot.Send(msg)
+				}
+			case "/leave":
+				if gameInProgress {
+					// Logic to handle leaving the game
+					gameInProgress = false
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "You have left the game.")
+					bot.Send(msg)
+				} else {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "There is no game in progress.")
+					bot.Send(msg)
+				}
 			default:
 				msgText := "Sorry, I didn't recognize that command. Use /help to see available commands."
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
