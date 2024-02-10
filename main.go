@@ -76,6 +76,37 @@ func Deal(deck Deck, numPlayers int) []Hand {
 	return hands
 }
 
+// Define a function to get the emoji representation of the suit
+func suitEmoji(suit Suit) string {
+	switch suit {
+	case Spades:
+		return "♠️"
+	case Hearts:
+		return "❤️"
+	case Diamonds:
+		return "♦️"
+	case Clubs:
+		return "♣️"
+	default:
+		return string(suit)
+	}
+}
+
+func rankEmoji(rank Rank) string {
+	switch rank {
+	case Ace:
+		return "🅰️"
+	case King:
+		return "👑"
+	case Queen:
+		return "👸"
+	case Jack:
+		return "🎩"
+	default:
+		return fmt.Sprintf("%d", rank)
+	}
+}
+
 func main() {
 	bot, err := tgbotapi.NewBotAPI("6863492345:AAH-ak_depbfolBuCoI7PzfHu4ajJZ0L030") // Replace with your Bot Token
 	if err != nil {
@@ -109,7 +140,7 @@ func main() {
 
 				var rows [][]tgbotapi.InlineKeyboardButton
 				for _, card := range playerHand {
-					button := tgbotapi.NewInlineKeyboardButtonData(string(card.Suit)+" - "+fmt.Sprint(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
+					button := tgbotapi.NewInlineKeyboardButtonData(suitEmoji(card.Suit)+" - "+rankEmoji(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
 					row := []tgbotapi.InlineKeyboardButton{button}
 					rows = append(rows, row)
 				}
