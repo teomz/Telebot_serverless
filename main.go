@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -96,18 +97,26 @@ func main() {
 		if update.CallbackQuery != nil {
 			callbackData := update.CallbackQuery.Data
 			if callbackData == "play_game" {
-				// Game logic...
+				// This is a placeholder for starting the game logic
 				log.Printf("Game started by user: %s", update.CallbackQuery.From.UserName)
 
 				// Here you could shuffle and deal cards, then notify players
 				deck := NewDeck()
 				Shuffle(deck)
 				hands := Deal(deck, 4) // Assuming 4 players
-				for i, hand := range hands {
-					log.Printf("Player %d's hand: %v\n", i+1, hand) // Simplified
-				}
+				playerID := 1          // Change this to the player whose cards you want to display
+				playerHand := hands[playerID-1]
 
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "The game has started. Check the console for your hand.")
+				var rows [][]tgbotapi.InlineKeyboardButton
+				for _, card := range playerHand {
+					button := tgbotapi.NewInlineKeyboardButtonData(string(card.Suit)+" - "+fmt.Sprint(card.Rank), "card_"+string(card.Suit)+"_"+fmt.Sprint(card.Rank))
+					row := []tgbotapi.InlineKeyboardButton{button}
+					rows = append(rows, row)
+				}
+				keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Your hand:")
+				msg.ReplyMarkup = keyboard
 				bot.Send(msg)
 
 				callbackResp := tgbotapi.NewCallback(update.CallbackQuery.ID, "Game started!")
@@ -129,6 +138,7 @@ func main() {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				bot.Send(msg)
 			case "/play_game":
+				// Send a message with a "Play Bridge" button to start the game
 				keyboard := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
 						tgbotapi.NewInlineKeyboardButtonData("🎲 Play Bridge", "play_game"),
