@@ -8,55 +8,55 @@ import (
 )
 
 func main() {
-	// Replace "YOUR_TELEGRAM_BOT_TOKEN" with the API token provided by the BotFather.
-	bot, err := tgbotapi.NewBotAPI("6863492345:AAH-ak_depbfolBuCoI7PzfHu4ajJZ0L030")
+	bot, err := tgbotapi.NewBotAPI("6863492345:AAH-ak_depbfolBuCoI7PzfHu4ajJZ0L030") // Replace with your Bot Token
 	if err != nil {
 		log.Fatalf("Error creating bot: %v", err)
 	}
-	// Set the bot to use debug mode (verbose logging).
+
 	bot.Debug = true
-	log.Printf("Authorized as @%s", bot.Self.UserName)
-	// Set up updates configuration.
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	// Get updates from the Telegram API.
+
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		log.Fatalf("Error getting updates: %v", err)
 	}
-	// Process incoming messages.
+
 	for update := range updates {
-		if update.Message == nil { // Ignore any non-Message updates.
+		if update.Message == nil {
 			continue
 		}
-		// Log the received message text and sender username.
+
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		// Extract the command from the message text.
 		command := strings.Split(update.Message.Text, " ")[0]
 
-		// Respond to the user based on the command.
-		var responseText string
 		switch command {
 		case "/start":
-			responseText = "Welcome to the Bridge bot! Use /help to see available commands."
-		case "/join":
-			responseText = "You've joined the game. Waiting for more players..."
-		case "/leave":
-			responseText = "You've left the game."
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Welcome to the Bridge bot! Use /help to see available commands.")
+			bot.Send(msg)
 		case "/help":
-			responseText = "Available commands:\n/start - start interacting with the bot\n/join - join a poker game\n/leave - leave the current game\n/fold - fold your hand\n/check - check during your turn"
-		case "/fold":
-			responseText = "You've folded."
-		case "/check":
-			responseText = "You've checked."
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Available commands:\n/start - start interacting with the bot\n/join - join a Bridge game\n/leave - leave the current game\n/fold - fold your hand\n/check - check during your turn\n/play_game - play the game")
+			bot.Send(msg)
+		case "/play_game":
+			gameShortName := "your_game_short_name" // Replace with your game short name
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Let's play a game!")
+			keyboard := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonSwitch("🎲 Play Game", gameShortName),
+				),
+			)
+			msg.ReplyMarkup = keyboard
+			bot.Send(msg)
+		case "/join", "/leave", "/fold", "/check":
+			// Placeholder for future command implementation
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "This command is not implemented yet.")
+			bot.Send(msg)
 		default:
-			responseText = "Sorry, I didn't recognize that command."
-		}
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, responseText)
-		if _, err := bot.Send(msg); err != nil {
-			log.Printf("Error sending message: %v", err)
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, I didn't recognize that command.")
+			bot.Send(msg)
 		}
 	}
 }
