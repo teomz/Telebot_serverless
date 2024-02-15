@@ -57,7 +57,7 @@ func main() {
 			keyboard.OneTimeKeyboard = true
 
 			// Create a message with the keyboard markup
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Options:")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.")
 			msg.ReplyMarkup = keyboard
 
 			// Send the message
