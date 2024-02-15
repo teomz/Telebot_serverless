@@ -3,45 +3,81 @@ package main
 import (
 	"log"
 	"os"
-	"sync"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joho/godotenv"
-)
-
-var (
-	participants = make(map[int64]string) // Maps user IDs to usernames
-	mu           sync.Mutex               // Ensures thread-safe access to participants
 )
 
 func main() {
 	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
-	// Retrieve the TELEGRAM_APITOKEN from environment
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error creating bot: %v", err)
+		log.Fatal("Error loading .env file")
 	}
 
-	bot.Debug = true
+	// Get the Telegram bot token from the environment variable
+	botToken := os.Getenv("TELEGRAM_APITOKEN")
+	if botToken == "" {
+		log.Fatal("TELEGRAM_APITOKEN not found in environment variables")
+	}
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	// Create a new bot instance
+	bot, err := tgbotapi.NewBotAPI(botToken)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	// Set up an update configuration
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
+	// Get updates from Telegram
+	updates, err := bot.GetUpdatesChan(updateConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	// Process incoming messages
 	for update := range updates {
-		if update.Message != nil { // If we have a message
-			switch update.Message.Text {
-			case "/join":
-				handleJoin(update.Message, bot) // Call the handleJoin function
-				// Add other cases as needed
-			}
+		if update.Message == nil { // ignore any non-Message updates
+			continue
+		}
+
+		switch update.Message.Text {
+		case "/start":
+			// Create a custom keyboard
+			keyboard := tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton("/help"),
+					tgbotapi.NewKeyboardButton("/play_game"),
+					tgbotapi.NewKeyboardButton("/leave"),
+				),
+			)
+			// Hide the custom keyboard once a button is pressed
+			keyboard.OneTimeKeyboard = true
+
+			// Create a message with the keyboard markup
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Options:")
+			msg.ReplyMarkup = keyboard
+
+			// Send the message
+			bot.Send(msg)
+
+		case "/help":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "This is the help message.")
+			bot.Send(msg)
+
+		case "/play_game":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Starting the game...")
+			bot.Send(msg)
+
+		case "/leave":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Leaving...")
+			bot.Send(msg)
+
+		default:
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command. Please use /start to see available options.")
+			bot.Send(msg)
 		}
 	}
 }
