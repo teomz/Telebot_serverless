@@ -3,10 +3,61 @@ package main
 import (
 	"log"
 	"os"
-
+	"math/rand"
+	"time"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joho/godotenv"
 )
+
+// Variable initialization
+type Suit string
+type Rank int
+
+const (
+	Spades   Suit = "Spades"
+	Hearts   Suit = "Hearts"
+	Diamonds Suit = "Diamonds"
+	Clubs    Suit = "Clubs"
+)
+
+const (
+	Ace   Rank = 14
+	King  Rank = 13
+	Queen Rank = 12
+	Jack  Rank = 11
+	Ten   Rank = 10
+	Nine  Rank = 9
+	Eight Rank = 8
+	Seven Rank = 7
+	Six   Rank = 6
+	Five  Rank = 5
+	Four  Rank = 4
+	Three Rank = 3
+	Two   Rank = 2
+)
+
+type Card struct {
+	Suit Suit
+	Rank Rank
+}
+
+type Deck []Card
+type Hand []Card
+
+type GameSession struct {
+	Players []tgbotapi.User
+	Deck    Deck
+	Hands   []Hand
+}
+
+var gameInProgress bool
+var session GameSession
+
+//Shuffle cards
+func Shuffle (deck Deck){
+	rand.Seed(time.Now().UnixNano()) //Create a RNG seed using the current timestamp 
+	rand.Shuffle(len(deck), func(i, j int) { deck[i], deck[j] = deck[j], deck[i] }) //Fisher-Yates algo to shuffle
+} 
 
 func main() {
 	// Load environment variables from .env file
@@ -59,7 +110,7 @@ func main() {
 			// Create a message with the keyboard markup
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.")
 			msg.ReplyMarkup = keyboard
-
+			
 			// Send the message
 			bot.Send(msg)
 
@@ -70,6 +121,7 @@ func main() {
 		case "/play_game":
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Starting the game...")
 			bot.Send(msg)
+
 
 		case "/leave":
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Leaving...")
