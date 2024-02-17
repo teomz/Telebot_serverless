@@ -9,13 +9,16 @@ import (
 //Class
 type MessageController struct{
 	//Member variables
-	bot *tgbotapi.BotAPI	
+	bot *tgbotapi.BotAPI
+	gameControllerLock bool
 }
 
 //Constructor
 func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
+	fmt.Println("Created Message Controller")
 	return &MessageController{
 		bot:     bot,
+		gameControllerLock: false,
 	}
 }
 
@@ -67,8 +70,16 @@ func (mc *MessageController) HandleMessage(message *tgbotapi.Message) {
 			msg := tgbotapi.NewMessage(message.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Display help message")
 			mc.bot.Send(msg)
 		case "play_game":
-			msg := tgbotapi.NewMessage(message.Chat.ID, "Starting the game...")
-			mc.bot.Send(msg)
+			// To ensure only one instance of GameController is initialized
+			if mc.gameControllerLock{
+				fmt.Println("Game Controller exist")
+				gameController.StartGame()
+			} else {
+				fmt.Println("Game Controller don't exist")
+				gameController := GameController{mc.bot}
+				gameController.StartGame()
+				mc.gameControllerLock = true
+			}
 		case "leave":
 			msg := tgbotapi.NewMessage(message.Chat.ID, "Leaving...")
 			mc.bot.Send(msg)

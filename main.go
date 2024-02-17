@@ -9,6 +9,7 @@ import (
 	"bridge/controllers"
 )
 
+
 func main() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
@@ -32,6 +33,6 @@ func main() {
 
 	fmt.Println("Bot instance created")
 
-	messageController := controllers.NewMessageController(bot)
-	messageController.StartListening()
+	MessageController := controllers.NewMessageController(bot)
+	MessageController.StartListening()
 }
