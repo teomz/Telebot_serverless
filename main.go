@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/iJoyRide/bridge/init"
+	init "github.com/iJoyRide/bridge/init"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
