@@ -1,4 +1,4 @@
-package game
+package init
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
