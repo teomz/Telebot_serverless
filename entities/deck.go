@@ -19,10 +19,10 @@ func NewDeck () *Deck{
 
 func LoadDeck () []Card {
 	var cards []Card
+	fmt.Println("Loading Deck for new game...")
 
 	for _, suit := range []Suit{Spades, Hearts, Diamonds, Clubs} {
 		for rank := Two; rank <= Ace; rank++ {
-			fmt.Printf("Card: %s %d\n", suit, rank)
 			cards = append(cards,Card{suit,rank})
 		}
 	}

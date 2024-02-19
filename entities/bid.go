@@ -1,8 +1,8 @@
 package entities
 
 type Bid struct{
-	suit Suit
-	bidNumber BidNumber
+	Suit Suit
+	BidNumber BidNumber
 }
 
 

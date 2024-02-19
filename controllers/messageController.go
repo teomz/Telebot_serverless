@@ -85,7 +85,7 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 				fmt.Println(err)
 			}else{
 				game.RemovePlayer(update.Message.From)
-				msg := fmt.Sprintf("%s has left room %d\n\n\nShutting down game...", update.Message.From, game.ID)
+				msg := fmt.Sprintf("%s has left room %d\n\nShutting down game...", update.Message.From, game.ID)
 				utils.SendMessage(mc.bot,update.Message.Chat.ID,msg)
 				GlobalGameController.RemoveGame(game)
 			}
@@ -118,18 +118,14 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 			if err != nil {
 				fmt.Println(err)
 			} else{
-				if len(game.Players) < 4{
+				if len(game.Players) < 1{
 						GlobalGameController.NotifyAddPlayer(query.From,roomID,msgID)
-				} else{
-					fmt.Printf("%d players in room. Starting Game...\n", len(game.Players))
-					//Deletes button to join game
-					utils.DeleteButton(mc.bot,query.Message.Chat.ID,msgID)
-					game.InProgress = true
-					msg:=fmt.Sprintf("Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s\n\nStarting game now...",roomID,game.Players[0].UserName,game.Players[1].UserName,game.Players[2].UserName,game.Players[3].UserName)
-					// msg:=fmt.Sprintf("Room %d\n\nPlayer 1: %s\n\nStarting game now...",roomID,game.Players[0].UserName)
-					utils.SendMessage(mc.bot,query.Message.Chat.ID,msg)
-					//Start Game Sequence
-					game.StartGame()
+						_,game,err := GlobalGameController.GetGame(roomID)
+						if err != nil{
+							fmt.Println(err)
+						} else{
+							game.CheckPlayers(mc.bot,query.Message.Chat.ID,roomID,msgID) //Check if room is full, else start game
+						}
 				}
 			}
 		}
