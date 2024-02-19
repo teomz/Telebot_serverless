@@ -5,7 +5,6 @@ import (
 	"bridge/utils"
 	"errors"
 	"fmt"
-	"log"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -31,9 +30,8 @@ func (gc *GameController) StartNewGame() {
 	Game := entities.NewGame()
 	gc.AddGame(Game)
 	room := fmt.Sprintf("join_game:%d",Game.ID)
-	btn := utils.CreateButton("Join Game",room)
-	row := []tgbotapi.InlineKeyboardButton{btn}
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(row)
+	btn := []tgbotapi.InlineKeyboardButton{utils.CreateButton("Join Game",room)}
+	keyboard := utils.CreateInlineMarkup(btn)
 
 	// Create a message with the inline keyboard
 	msg := tgbotapi.NewMessage(gc.chatID, "Starting a new game...\nNo of Players: 0")
@@ -53,17 +51,10 @@ func (gc *GameController) AddPlayer (user *tgbotapi.User, room uint64, msgID int
 			fmt.Println(err)
 		}	else{
 			newText := fmt.Sprintf("Starting a new game...\nNo of Players: %d", len(game.Players))
-			editMsg := tgbotapi.NewEditMessageText(gc.chatID, msgID, newText)
-
 			room := fmt.Sprintf("join_game:%d",game.ID)
-			btn := utils.CreateButton("Join Game",room)
-			row := []tgbotapi.InlineKeyboardButton{btn}
-			keyboard := tgbotapi.NewInlineKeyboardMarkup(row)
-			editMsg.ReplyMarkup = &keyboard
-			_, err = gc.bot.Send(editMsg)
-			if err != nil {
-				log.Fatal(err)
-			}
+			btn := []tgbotapi.InlineKeyboardButton{utils.CreateButton("Join Game",room)}
+			keyboard := utils.CreateInlineMarkup(btn)
+			utils.EditMessageWithMarkup(gc.bot,gc.chatID,newText,msgID,&keyboard)
 		}
 	}
 }

@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"bridge/utils"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -28,15 +30,11 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
 func (mc *MessageController) StartListening() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-
 	fmt.Println("Start Listening...")
-
 	updates, err := mc.bot.GetUpdatesChan(u)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-
 	for update := range updates {
 		if update.Message == nil{
 			if update.CallbackQuery !=nil{
@@ -66,16 +64,10 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 			)
 			// Hide the custom keyboard once a button is pressed
 			keyboard.OneTimeKeyboard = true
-
 			// Create a message with the keyboard markup
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.")
-			msg.ReplyMarkup = keyboard
-
-			// Send the message
-			mc.bot.Send(msg)
+			utils.SendMessageWithMarkup(mc.bot,update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.",keyboard)
 		case "help":
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Display help message")
-			mc.bot.Send(msg)
+			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Display help message")
 		case "play_game":
 			// To ensure only one instance of GameController is initialized
 			if mc.gameControllerLock{
@@ -88,11 +80,10 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 				mc.gameControllerLock = true
 			}
 		case "leave":
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Leaving...")
-			mc.bot.Send(msg)
+			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Leaving...")
+
 		default:
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command. Type /help for a list of available commands.")
-			mc.bot.Send(msg)
+			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Unknown command. Type /help for a list of available commands.")
 		}
 	}
 }
@@ -111,11 +102,25 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 	case "join_game":
 		// Respond to the button click
 		roomID,err:=strconv.ParseUint(data,10,64)
-		fmt.Printf("%d\n",roomID)
+		fmt.Printf("Room ID: %d, user: %s pressed the button.\n",roomID, user.UserName)
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			GlobalGameController.AddPlayer(user,roomID,msgID)
+			game,err := GlobalGameController.GetGame(roomID)
+			if err != nil {
+				fmt.Println(err)
+			} else{
+				if len(game.Players) < 4{
+					GlobalGameController.AddPlayer(user,roomID,msgID)
+				} else{
+					fmt.Println("4 players in room. Starting Game...")
+					//Deletes button to join game
+					utils.DeleteButton(mc.bot,query.Message.Chat.ID,msgID)
+					game.InProgress = true
+					utils.SendMessage(mc.bot,query.Message.Chat.ID,"4 players in room. Starting Game...")
+					//Start Game Sequence
+				}
+			}
 		}
 	default:
 		// Handle other callback query scenarios

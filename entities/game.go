@@ -12,7 +12,7 @@ type Game struct{
 	deck Deck
 	currentBid Bid
 	hands []Hand
-	inProgress bool
+	InProgress bool
 }
 
 func NewGame () *Game{
@@ -22,7 +22,7 @@ func NewGame () *Game{
 		deck : Deck{},
 		currentBid: Bid{},
 		hands: []Hand{},
-		inProgress: false,
+		InProgress: false,
 	}
 }
 
