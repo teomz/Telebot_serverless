@@ -1,9 +1,9 @@
 package utils
 
-import(
+import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func CreateButton(label, data string) tgbotapi.InlineKeyboardButton {
@@ -34,9 +34,9 @@ func SendMessageWithMarkup (bot *tgbotapi.BotAPI, chatID int64, text string,mark
 	msg := tgbotapi.NewMessage(chatID, text)
 
     switch m := markup.(type) {
-    case tgbotapi.InlineKeyboardMarkup:
+    case *tgbotapi.InlineKeyboardMarkup:
         msg.ReplyMarkup = m
-    case tgbotapi.ReplyKeyboardMarkup:
+    case *tgbotapi.ReplyKeyboardMarkup:
         msg.ReplyMarkup = m
     default:
         // Handle unsupported keyboard type
