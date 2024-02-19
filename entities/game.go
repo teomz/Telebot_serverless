@@ -10,6 +10,8 @@ import (
 )
 
 type Game struct{
+	bot *tgbotapi.BotAPI
+	chatID int64
 	ID uint32
 	Players []*tgbotapi.User
 	deck Deck
@@ -40,13 +42,18 @@ func (g *Game) StartGame (){
 		// g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
 		// g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
 
+		var label []string
+		var data []string
 		for _,e := range g.hands{
 			fmt.Printf("Player %s\n", e.player.UserName)
 			for _,card := range e.cards{
-				msg := utils.CreateButtons(card.Suit, card.Rank)
-				// fmt.Printf("Card: %s %d\n", card.Suit, card.Rank)
-				
+				data = append(data, fmt.Sprintf("%s_%d",card.Suit,card.Rank))
+				label = append(label, fmt.Sprintf("%s %d",card.Suit,card.Rank))
+
 			}
+			buttons:=utils.CreateButtons(label,data)
+			keyboard := utils.CreateInlineMarkup(buttons)
+			utils.SendMessageWithMarkup(g.bot,g.chatID,"Player 1",&keyboard)
 		}
 
 	}
