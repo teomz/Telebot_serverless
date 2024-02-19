@@ -41,8 +41,8 @@ func (gc *GameController) StartNewGame() {
 	gc.bot.Send(msg)
 }
 
-func (gc *GameController) AddPlayer (user *tgbotapi.User, room uint64, msgID int){
-	game,err := gc.GetGame(room)
+func (gc *GameController) NotifyAddPlayer (user *tgbotapi.User, room uint32, msgID int){
+	_,game,err := gc.GetGame(room)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -59,18 +59,40 @@ func (gc *GameController) AddPlayer (user *tgbotapi.User, room uint64, msgID int
 	}
 }
 
-func (gc *GameController) GetGame (id uint64) (*entities.Game,error){
-	for _,game := range gc.Games{
-		if game.ID == id{
-            return game,nil
+func (gc *GameController) GetGame (param interface{}) (int,*entities.Game,error){
+	switch m := param.(type){
+	case uint32:
+		for idx,game := range gc.Games{
+			if game.ID == m{
+				return idx,game,nil
+			}
+		}
+	case *tgbotapi.User:
+		for idx,game := range gc.Games{
+			for _,player := range game.Players{
+				if player.ID == m.ID{
+					return idx,game, nil
+				}
+			}
 		}
 	}
-	return nil, errors.New("no game found")
+	return -1,nil,errors.New("cannot find gameID/ cannot find player")
 }
 
 func (gc *GameController) AddGame(game *entities.Game) {
 	gc.Games = append(gc.Games, game)
 }
+
+func (gc *GameController) RemoveGame(game *entities.Game) {
+	idx,_,err := gc.GetGame(game.ID)
+	if err != nil{
+		fmt.Println(err)
+	}else{
+		gc.Games = append(gc.Games[idx:], gc.Games[idx+1:]...)
+		fmt.Printf("Deleted room %d\n", game.ID)
+	}
+}
+
 
 
 

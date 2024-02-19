@@ -80,8 +80,15 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 				mc.gameControllerLock = true
 			}
 		case "leave":
-			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Leaving...")
-
+			_,game,err:=GlobalGameController.GetGame(update.Message.From)
+			if err != nil{
+				fmt.Println(err)
+			}else{
+				game.RemovePlayer(update.Message.From)
+				msg := fmt.Sprintf("%s has left room %d\n\n\nShutting down game...", update.Message.From, game.ID)
+				utils.SendMessage(mc.bot,update.Message.Chat.ID,msg)
+				GlobalGameController.RemoveGame(game)
+			}
 		default:
 			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Unknown command. Type /help for a list of available commands.")
 		}
@@ -101,24 +108,28 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 	switch command {
 	case "join_game":
 		// Respond to the button click
-		roomID,err:=strconv.ParseUint(data,10,64)
+		roomID,err:=strconv.ParseUint(data,10,32)
 		fmt.Printf("Room ID: %d, user: %s pressed the button.\n",roomID, user.UserName)
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			game,err := GlobalGameController.GetGame(roomID)
+			roomID:=uint32(roomID)
+			_,game,err := GlobalGameController.GetGame(roomID)
 			if err != nil {
 				fmt.Println(err)
 			} else{
 				if len(game.Players) < 4{
-					GlobalGameController.AddPlayer(user,roomID,msgID)
+						GlobalGameController.NotifyAddPlayer(query.From,roomID,msgID)
 				} else{
-					fmt.Println("4 players in room. Starting Game...")
+					fmt.Printf("%d players in room. Starting Game...\n", len(game.Players))
 					//Deletes button to join game
 					utils.DeleteButton(mc.bot,query.Message.Chat.ID,msgID)
 					game.InProgress = true
-					utils.SendMessage(mc.bot,query.Message.Chat.ID,"4 players in room. Starting Game...")
+					msg:=fmt.Sprintf("Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s\n\nStarting game now...",roomID,game.Players[0].UserName,game.Players[1].UserName,game.Players[2].UserName,game.Players[3].UserName)
+					// msg:=fmt.Sprintf("Room %d\n\nPlayer 1: %s\n\nStarting game now...",roomID,game.Players[0].UserName)
+					utils.SendMessage(mc.bot,query.Message.Chat.ID,msg)
 					//Start Game Sequence
+					game.StartGame()
 				}
 			}
 		}
