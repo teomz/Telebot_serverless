@@ -15,6 +15,7 @@ type MessageController struct{
 	//Member variables
 	bot *tgbotapi.BotAPI
 	gameControllerLock bool
+	Chats []tgbotapi.Chat
 }
 
 //Constructor
@@ -23,6 +24,7 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
 	return &MessageController{
 		bot:     bot,
 		gameControllerLock: false,
+		Chats: []tgbotapi.Chat{},
 	}
 }
 
@@ -48,31 +50,60 @@ func (mc *MessageController) StartListening() {
 	}
 }
 
+func (mc *MessageController) CheckChat (chat *tgbotapi.Chat) bool{
+	if len(mc.Chats) == 0{
+		return false //dont exist
+	}
+	for _,c := range mc.Chats{
+		if c == *chat{
+			return true
+		}
+	}
+	return false
+}
+
+func (mc *MessageController) AddChat (chat *tgbotapi.Chat){
+	if !mc.CheckChat(chat){
+		mc.Chats = append(mc.Chats, *chat)
+		fmt.Println("Added chat to list!")
+		return
+	} else{
+		fmt.Println("From existing chat: chat %d", chat.ID)
+		return
+	}
+}
+
+func (mc *MessageController)CheckOngoingGame(chat *tgbotapi.Chat) bool{
+	if len(GlobalGameController.Games)==0{
+		return false
+	}else{
+		for _,g := range (GlobalGameController.Games){
+			if g.ChatID == chat.ID{
+				return true
+			}
+		}
+	}
+	return false
+}
 //MessageHandler
 func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 	if update.Message.IsCommand(){
+		mc.AddChat(update.Message.Chat)
 		command := update.Message.Command()
 		switch command {
 		case "start":
-			// Create a custom keyboard
-			keyboard := tgbotapi.NewReplyKeyboard(
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton("/help"),
-					tgbotapi.NewKeyboardButton("/play_game"),
-					tgbotapi.NewKeyboardButton("/leave"),
-				),
-			)
-			// Hide the custom keyboard once a button is pressed
-			keyboard.OneTimeKeyboard = true
-			// Create a message with the keyboard markup
-			utils.SendMessageWithMarkup(mc.bot,update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.",keyboard)
+			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.\n\n/play_game : to play\n/leave: to leave\n/help: for more commands")
 		case "help":
 			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Display help message")
 		case "play_game":
 			// To ensure only one instance of GameController is initialized
 			if mc.gameControllerLock{
 				fmt.Println("Game Controller exist")
-				GlobalGameController.StartNewGame()
+				if !mc.CheckOngoingGame(update.Message.Chat){
+					GlobalGameController.StartNewGame()
+				}else{
+					utils.SendMessage(mc.bot,update.Message.Chat.ID,fmt.Sprintf("%s, a game is already ongoing in this chat",update.Message.From.UserName))
+				}
 			} else {
 				fmt.Println("Game Controller don't exist")
 				GlobalGameController = GameController{mc.bot,update.Message.Chat.ID,nil}
@@ -103,6 +134,7 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 	parts := strings.Split(query.Data,":")
 	command := parts[0]
 	data := parts[1]
+	mc.AddChat(query.Message.Chat)
 
 	// Handle the callback query logic based on the data
 	switch command {
@@ -118,7 +150,7 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 			if err != nil {
 				fmt.Println(err)
 			} else{
-				if len(game.Players) < 1{
+				if len(game.Players) < 4{
 						GlobalGameController.NotifyAddPlayer(query.From,roomID,msgID)
 						_,game,err := GlobalGameController.GetGame(roomID)
 						if err != nil{

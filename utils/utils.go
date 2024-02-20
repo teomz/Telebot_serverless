@@ -13,6 +13,7 @@ func CreateButton(label, data string) tgbotapi.InlineKeyboardButton {
 
 func CreateButtons(label, data []string) []tgbotapi.InlineKeyboardButton {
 	var buttons []tgbotapi.InlineKeyboardButton
+
 	for i := 0; i < len(label); i++{
 		button:=tgbotapi.NewInlineKeyboardButtonData(label[i], data[i])
 		buttons = append(buttons, button)
@@ -30,7 +31,7 @@ func SendMessage (bot *tgbotapi.BotAPI, chatID int64, text string){
 	bot.Send(msg)
 }
 
-func SendMessageWithMarkup (bot *tgbotapi.BotAPI, chatID int64, text string,markup interface{}){
+func SendMessageWithMarkup (bot *tgbotapi.BotAPI, chatID int64, text string, markup interface{}){
 	msg := tgbotapi.NewMessage(chatID, text)
 
     switch m := markup.(type) {
@@ -47,19 +48,31 @@ func SendMessageWithMarkup (bot *tgbotapi.BotAPI, chatID int64, text string,mark
     bot.Send(msg)
 }
 
-func CreateInlineMarkup (buttons []tgbotapi.InlineKeyboardButton) tgbotapi.InlineKeyboardMarkup{
-	var row []tgbotapi.InlineKeyboardButton
+func CreateInlineMarkup(buttons []tgbotapi.InlineKeyboardButton) *tgbotapi.InlineKeyboardMarkup {
+	var columns [][]tgbotapi.InlineKeyboardButton
 
-	if len(buttons) == 1 {
-        // If there's only one button, create a new row with that button
-        row = append(row, buttons[0])
-    } else if len(buttons) > 1 {
-        // If there are multiple buttons, use the provided buttons as the row
-        row = buttons
-    }
+	for _, button := range buttons {
+		// Create a new column with each button
+		column := []tgbotapi.InlineKeyboardButton{button}
+		columns = append(columns, column)
+	}
 
-	keyboard:=tgbotapi.NewInlineKeyboardMarkup(row)
-	return keyboard
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(columns...)
+	return &keyboard
+}
+
+func CreateKeyboardMarkup(data []string) *tgbotapi.ReplyKeyboardMarkup {
+	var buttons []tgbotapi.KeyboardButton
+
+	for i := 0; i < len(data); i++{
+		button:=tgbotapi.NewKeyboardButton(data[i])
+		buttons = append(buttons, button)
+	}
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(buttons...),
+	)
+
+	return &keyboard
 }
 
 func EditMessageWithMarkup (bot *tgbotapi.BotAPI, chatID int64, text string, msgID int, markup *tgbotapi.InlineKeyboardMarkup){

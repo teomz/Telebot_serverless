@@ -27,18 +27,14 @@ func NewGameController (bot *tgbotapi.BotAPI, chatID int64, games []*entities.Ga
 func (gc *GameController) StartNewGame() {
 	fmt.Println("Start New Game")
 
-	Game := entities.NewGame()
+	Game := entities.NewGame(gc.bot,gc.chatID)
 	gc.AddGame(Game)
 	room := fmt.Sprintf("join_game:%d",Game.ID)
 	btn := []tgbotapi.InlineKeyboardButton{utils.CreateButton("Join Game",room)}
 	keyboard := utils.CreateInlineMarkup(btn)
 
 	// Create a message with the inline keyboard
-	msg := tgbotapi.NewMessage(gc.chatID, "Starting a new game...\nNo of Players: 0")
-	msg.ReplyMarkup = keyboard
-
-	// Send the message with the inline keyboard
-	gc.bot.Send(msg)
+	utils.SendMessageWithMarkup(gc.bot,gc.chatID, "Starting a new game...\nNo of Players: 0",keyboard)
 }
 
 func (gc *GameController) NotifyAddPlayer (user *tgbotapi.User, room uint32, msgID int){
@@ -54,7 +50,7 @@ func (gc *GameController) NotifyAddPlayer (user *tgbotapi.User, room uint32, msg
 			room := fmt.Sprintf("join_game:%d",game.ID)
 			btn := []tgbotapi.InlineKeyboardButton{utils.CreateButton("Join Game",room)}
 			keyboard := utils.CreateInlineMarkup(btn)
-			utils.EditMessageWithMarkup(gc.bot,gc.chatID,newText,msgID,&keyboard)
+			utils.EditMessageWithMarkup(gc.bot,gc.chatID,newText,msgID,keyboard)
 		}
 	}
 }
