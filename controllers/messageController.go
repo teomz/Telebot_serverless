@@ -68,7 +68,7 @@ func (mc *MessageController) AddChat (chat *tgbotapi.Chat){
 		fmt.Println("Added chat to list!")
 		return
 	} else{
-		fmt.Println("From existing chat: chat %d", chat.ID)
+		fmt.Printf("From existing chat: chat %d\n", chat.ID)
 		return
 	}
 }

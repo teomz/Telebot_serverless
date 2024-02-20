@@ -24,7 +24,7 @@ type Game struct{
 func NewGame (bot *tgbotapi.BotAPI, chatID int64) *Game{
 	return &Game{
 		bot:bot,
-		chatID: chatID,
+		ChatID: chatID,
 		ID: rand.Uint32(),
 		Players: []*tgbotapi.User{},
 		deck : *NewDeck(),

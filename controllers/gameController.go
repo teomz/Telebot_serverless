@@ -5,6 +5,7 @@ import (
 	"bridge/utils"
 	"errors"
 	"fmt"
+	"strings"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -46,11 +47,25 @@ func (gc *GameController) NotifyAddPlayer (user *tgbotapi.User, room uint32, msg
 		if err != nil{
 			fmt.Println(err)
 		}	else{
-			newText := fmt.Sprintf("Starting a new game...\nNo of Players: %d", len(game.Players))
+			var text []interface{}
+			var tmp []string
+			var result string
+			text = append(text, fmt.Sprintf("Game Lobby %d\n\n", game.ID))
+			for idx, player := range (game.Players){
+				text = append(text,fmt.Sprintf("Player %d: %s\n", idx+1,player.UserName))
+			}
+			text = append(text, fmt.Sprintf("No of Players: %d, %d more players to start", len(game.Players),4-len(game.Players)))
+			for _,item := range text{
+				switch v:= item.(type){
+				case string:
+					tmp = append(tmp, v)
+				}
+			}
+			result = strings.Join(tmp,"")
 			room := fmt.Sprintf("join_game:%d",game.ID)
 			btn := []tgbotapi.InlineKeyboardButton{utils.CreateButton("Join Game",room)}
 			keyboard := utils.CreateInlineMarkup(btn)
-			utils.EditMessageWithMarkup(gc.bot,gc.chatID,newText,msgID,keyboard)
+			utils.EditMessageWithMarkup(gc.bot,gc.chatID,result,msgID,keyboard)
 		}
 	}
 }
