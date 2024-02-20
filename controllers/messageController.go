@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"bridge/entities"
 	"bridge/utils"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -14,7 +16,7 @@ import (
 type MessageController struct{
 	//Member variables
 	bot *tgbotapi.BotAPI
-	gameControllerLock bool
+	GameControllers []*GameController
 }
 
 //Constructor
@@ -22,7 +24,7 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
 	fmt.Println("Created Message Controller")
 	return &MessageController{
 		bot:     bot,
-		gameControllerLock: false,
+		GameControllers: []*GameController{},
 	}
 }
 
@@ -48,46 +50,67 @@ func (mc *MessageController) StartListening() {
 	}
 }
 
+func (mc *MessageController) CheckGameController (gc *GameController) bool{
+	if len(mc.GameControllers) == 0{
+		return false //dont exist
+	}
+	for _,c := range mc.GameControllers{
+		if c == gc{
+			return true
+		}
+	}
+	return false
+}
+
+func (mc *MessageController) AddGameController (gc *GameController){
+	if !mc.CheckGameController(gc){
+		mc.GameControllers = append(mc.GameControllers, gc)
+		fmt.Println("Added game controller to list!")
+		return
+	} else{
+		fmt.Printf("From existing game controller: chat %d\n", gc.chatID)
+		return
+	}
+}
+
+func (mc *MessageController)CheckOngoingController(chatID int64) bool{
+	_,err:=mc.FindGameController(chatID)
+	if err!=nil{
+		fmt.Println(err)
+		return false
+	}else{
+		return true
+	}
+}
 //MessageHandler
 func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 	if update.Message.IsCommand(){
 		command := update.Message.Command()
 		switch command {
 		case "start":
-			// Create a custom keyboard
-			keyboard := tgbotapi.NewReplyKeyboard(
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton("/help"),
-					tgbotapi.NewKeyboardButton("/play_game"),
-					tgbotapi.NewKeyboardButton("/leave"),
-				),
-			)
-			// Hide the custom keyboard once a button is pressed
-			keyboard.OneTimeKeyboard = true
-			// Create a message with the keyboard markup
-			utils.SendMessageWithMarkup(mc.bot,update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.",keyboard)
+			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Welcome to Bridge! Bridge is a four-player partnership trick-taking game with thirteen tricks per deal.\n\n/play_game : to play\n/leave: to leave\n/help: for more commands")
 		case "help":
 			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Display help message")
 		case "play_game":
-			// To ensure only one instance of GameController is initialized
-			if mc.gameControllerLock{
-				fmt.Println("Game Controller exist")
-				GlobalGameController.StartNewGame()
-			} else {
-				fmt.Println("Game Controller don't exist")
-				GlobalGameController = GameController{mc.bot,update.Message.Chat.ID,nil}
-				GlobalGameController.StartNewGame()
-				mc.gameControllerLock = true
+			// Check game controller
+			if !mc.CheckOngoingController(update.Message.Chat.ID){
+				gameController:=GameController{mc.bot,update.Message.Chat.ID,entities.NewGame(mc.bot,update.Message.Chat.ID)}
+				mc.AddGameController(&gameController)
+				mc.PrintAllControllers()
+				gameController.StartNewGame()
+			}else{
+				utils.SendMessage(mc.bot,update.Message.Chat.ID,fmt.Sprintf("%s, a game is already ongoing...",update.Message.From.UserName))
 			}
 		case "leave":
-			_,game,err:=GlobalGameController.GetGame(update.Message.From)
+			gc,err := mc.FindGameController(update.Message.Chat.ID)
 			if err != nil{
 				fmt.Println(err)
 			}else{
-				game.RemovePlayer(update.Message.From)
-				msg := fmt.Sprintf("%s has left room %d\n\nShutting down game...", update.Message.From, game.ID)
+				gc.Game.RemovePlayer(update.Message.From)
+				msg := fmt.Sprintf("%s has left room %d\n\nShutting down game...", update.Message.From, gc.Game.ID)
 				utils.SendMessage(mc.bot,update.Message.Chat.ID,msg)
-				GlobalGameController.RemoveGame(game)
+				gc.RemoveGame()
+				mc.RemoveGameController(update.Message.Chat.ID)
 			}
 		default:
 			utils.SendMessage(mc.bot,update.Message.Chat.ID, "Unknown command. Type /help for a list of available commands.")
@@ -114,22 +137,45 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 			fmt.Println(err)
 		} else {
 			roomID:=uint32(roomID)
-			_,game,err := GlobalGameController.GetGame(roomID)
-			if err != nil {
+			gc,err := mc.FindGameController(query.Message.Chat.ID)
+			if err != nil{
 				fmt.Println(err)
-			} else{
-				if len(game.Players) < 1{
-						GlobalGameController.NotifyAddPlayer(query.From,roomID,msgID)
-						_,game,err := GlobalGameController.GetGame(roomID)
-						if err != nil{
-							fmt.Println(err)
-						} else{
-							game.CheckPlayers(mc.bot,query.Message.Chat.ID,roomID,msgID) //Check if room is full, else start game
-						}
+			}else{
+				game := gc.Game
+				if len(game.Players) < 4{
+						gc.NotifyAddPlayer(query.From,roomID,msgID)
+						game:= gc.Game
+						game.CheckPlayers(mc.bot,query.Message.Chat.ID,roomID,msgID) //Check if room is full, else start game
 				}
 			}
 		}
 	default:
 		// Handle other callback query scenarios
+	}
+}
+
+func (mc *MessageController) FindGameController (chatID int64) (*GameController,error){
+	for _,controller := range mc.GameControllers{
+		if controller.chatID == chatID{
+			return controller,nil
+		}
+	}
+	return nil,errors.New("No controller found")
+}
+
+func (mc *MessageController) RemoveGameController (chatID int64){
+	var index int
+	for idx,controller := range mc.GameControllers{
+		if controller.chatID == chatID{
+			index = idx
+			break
+		}
+	}
+	mc.GameControllers = append(mc.GameControllers[:index],mc.GameControllers[index+1:]...)
+}
+
+func (mc *MessageController) PrintAllControllers (){
+	for _,controller := range mc.GameControllers{
+		fmt.Printf("ChatID: %d\n", controller.chatID)
 	}
 }
