@@ -16,7 +16,7 @@ type Game struct{
 	ID uint32
 	Players []*tgbotapi.User
 	deck Deck
-	currentBid Bid
+	// currentBid Bid
 	hands []Hand
 	InProgress bool
 }
@@ -28,7 +28,7 @@ func NewGame (bot *tgbotapi.BotAPI, chatID int64) *Game{
 		ID: rand.Uint32(),
 		Players: []*tgbotapi.User{},
 		deck : *NewDeck(),
-		currentBid: Bid{},
+		// currentBid: Bid{},
 		hands: []Hand{},
 		InProgress: false,
 	}
