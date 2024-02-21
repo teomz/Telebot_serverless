@@ -43,19 +43,6 @@ func (g *Game) StartGame (){
 		// g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
 		// g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
 		// g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
-
-			// utils.SendMessage(g.bot,g.ChatID,"Take a look at your hands @%s\n@%s\n@%s\n@%s\n", g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName)
-		button := tgbotapi.NewInlineKeyboardButtonData("Press me", fmt.Sprintf("show_hand:%d",g.ID))
-
-		// Create an inline keyboard markup with the button
-		keyboard := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(button))
-
-		// Create a message with the inline keyboard
-		msg := tgbotapi.NewMessage(g.ChatID, "Press the button:")
-		msg.ReplyMarkup = keyboard
-
-		// Send the message to the chat
-		g.Bot.Send(msg)
 	}
 }
 
