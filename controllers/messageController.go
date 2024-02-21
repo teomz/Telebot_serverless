@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -30,21 +31,23 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController {
 }
 
 // Listener
-func (mc *MessageController) StartListening(update tgbotapi.Update) {
+func (mc *MessageController) StartListening(w *http.ResponseWriter, r *http.Request) {
+	updates := mc.bot.ListenForWebhookRespReqFormat(w, r)
+	for update := range updates {
+		if update.Message != nil {
+			mc.HandleMessage(update)
 
-	if update.Message != nil {
-		mc.HandleMessage(update)
+		}
+		if update.CallbackQuery != nil {
+			mc.HandleCallbackQuery(update.CallbackQuery)
 
-	}
-	if update.CallbackQuery != nil {
-		mc.HandleCallbackQuery(update.CallbackQuery)
-
-	}
-	if update.InlineQuery != nil {
-		fmt.Println("Length of Game Controller in play_game:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
-		err := mc.HandleInlineQuery(update.InlineQuery)
-		if err != nil {
-			log.Println(err)
+		}
+		if update.InlineQuery != nil {
+			fmt.Println("Length of Game Controller in play_game:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
+			err := mc.HandleInlineQuery(update.InlineQuery)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }

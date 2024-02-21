@@ -8,7 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w *http.ResponseWriter, r *http.Request) {
 
 	bot := &tgbotapi.BotAPI{
 
@@ -22,13 +22,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
 	MessageController := controllers.NewMessageController(bot)
 
-	updates := bot.ListenForWebhookRespReqFormat(w, r)
-	for true {
-		for update := range updates {
-			MessageController.StartListening(update)
-		}
-	}
-
+	MessageController.StartListening(w, r)
 	select {}
 
 }
