@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"bridge/controllers"
@@ -10,7 +10,7 @@ import (
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 
-	updates := ListenForWebhookRespReqFormat(w,r)
+	updates := ListenForWebhookRespReqFormat(w, r)
 
 	bot := &tgbotapi.BotAPI{
 
@@ -23,10 +23,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
 
-
 	MessageController := controllers.NewMessageController(bot)
 
-	for update := range updates{
+	for update := range updates {
 		MessageController.StartListening(update)
 	}
 }
