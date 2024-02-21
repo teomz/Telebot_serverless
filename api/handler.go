@@ -23,6 +23,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	MessageController := controllers.NewMessageController(bot)
 
 	MessageController.StartListening(w, r)
-	select {}
+
+	MessageController.ExportStateToFile("small_state.json")
 
 }

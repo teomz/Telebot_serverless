@@ -3,11 +3,13 @@ package controllers
 import (
 	"bridge/entities"
 	"bridge/utils"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -252,3 +254,38 @@ func (mc *MessageController) PrintAllControllers() {
 		fmt.Printf("ChatID: %d\n", controller.chatID)
 	}
 }
+
+func (mc *MessageController) ExportStateToFile(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "    ") // Set indentation for better readability
+
+	if err := encoder.Encode(mc); err != nil {
+		return err
+	}
+
+	fmt.Println("State exported successfully to", filename)
+	return nil
+}
+
+// // Import the state of the MessageController and associated data structures from a JSON file
+// func (mc *MessageController) ImportStateFromFile(filename string) error {
+// 	file, err := os.Open(filename)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer file.Close()
+
+// 	decoder := json.NewDecoder(file)
+// 	if err := decoder.Decode(mc); err != nil {
+// 		return err
+// 	}
+
+// 	fmt.Println("State imported successfully from", filename)
+// 	return nil
+// }
