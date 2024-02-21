@@ -41,6 +41,7 @@ func (mc *MessageController) StartListening(update tgbotapi.Update) {
 
 	}
 	if update.InlineQuery != nil {
+		fmt.Println("Length of Game Controller in play_game:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 		err := mc.HandleInlineQuery(update.InlineQuery)
 		if err != nil {
 			log.Println(err)
@@ -62,9 +63,9 @@ func (mc *MessageController) CheckGameController(gc *GameController) bool {
 
 func (mc *MessageController) AddGameController(gc *GameController) {
 	if !mc.CheckGameController(gc) {
-		fmt.Println("Before append - Length:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
+		fmt.Println("Before append - Length:", len(mc.GameControllers))
 		mc.GameControllers = append(mc.GameControllers, gc)
-		fmt.Println("After append - Length:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
+		fmt.Println("After append - Length:", len(mc.GameControllers))
 		return
 	} else {
 		fmt.Printf("From existing game controller: chat %d\n", gc.chatID)
@@ -98,7 +99,6 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 				mc.AddGameController(&gameController)
 				mc.PrintAllControllers()
 				gameController.StartNewGame()
-				fmt.Println("Length of Game Controller in play_game:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 			} else {
 				utils.SendMessage(mc.bot, update.Message.Chat.ID, fmt.Sprintf("%s, a game is already ongoing...", update.Message.From.UserName))
 			}
