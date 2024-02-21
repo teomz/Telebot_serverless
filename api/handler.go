@@ -20,10 +20,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
+	MessageController := controllers.NewMessageController(bot)
 
 	updates := bot.ListenForWebhookRespReqFormat(w, r)
-
-	MessageController := controllers.NewMessageController(bot)
 
 	for update := range updates {
 		MessageController.StartListening(update)
