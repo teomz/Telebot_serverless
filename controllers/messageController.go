@@ -38,12 +38,10 @@ func (mc *MessageController) StartListening(w http.ResponseWriter, r *http.Reque
 	for update := range updates {
 		if update.Message != nil {
 			mc.HandleMessage(update)
-			mc.ExportStateToFile("small_state.json")
 
 		}
 		if update.CallbackQuery != nil {
 			mc.HandleCallbackQuery(update.CallbackQuery)
-			mc.ExportStateToFile("small_state.json")
 
 		}
 		if update.InlineQuery != nil {
@@ -52,7 +50,6 @@ func (mc *MessageController) StartListening(w http.ResponseWriter, r *http.Reque
 			if err != nil {
 				log.Println(err)
 			}
-			mc.ExportStateToFile("small_state.json")
 		}
 	}
 }
@@ -129,6 +126,7 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 		id := entities.IDToName(sticker.FileUniqueID)
 		fmt.Printf("%s %s\n", sticker.FileID, id)
 	}
+	mc.ExportStateToFile("small_state.json")
 }
 
 // Callback Query Handler
@@ -168,6 +166,7 @@ func (mc *MessageController) HandleCallbackQuery(query *tgbotapi.CallbackQuery) 
 	default:
 		// Handle other callback query scenarios
 	}
+	mc.ExportStateToFile("small_state.json")
 }
 
 func (mc *MessageController) HandleInlineQuery(query *tgbotapi.InlineQuery) error {
@@ -214,6 +213,7 @@ func (mc *MessageController) HandleInlineQuery(query *tgbotapi.InlineQuery) erro
 			}
 		}
 	}
+	mc.ExportStateToFile("small_state.json")
 	return nil
 
 }
