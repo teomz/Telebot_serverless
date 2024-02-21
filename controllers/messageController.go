@@ -38,15 +38,16 @@ func (mc *MessageController) StartListening() {
 		log.Fatal(err)
 	}
 	for update := range updates {
-		if update.Message == nil{
-			if update.CallbackQuery !=nil{
-				mc.HandleCallbackQuery(update.CallbackQuery)
-			} else{
-				continue
-			}
-		} else{
-			mc.HandleMessage(update)
-		}
+
+		// if update.Message == nil{
+		// 	if update.CallbackQuery !=nil{
+		// 		mc.HandleCallbackQuery(update.CallbackQuery)
+		// 	} else{
+		// 		continue
+		// 	}
+		// } else{
+		// 	mc.HandleMessage(update)
+		// }
 	}
 }
 
@@ -142,7 +143,7 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 				fmt.Println(err)
 			}else{
 				game := gc.Game
-				if len(game.Players) < 4{
+				if len(game.Players) < 1{
 						gc.NotifyAddPlayer(query.From,roomID,msgID)
 						game:= gc.Game
 						game.CheckPlayers(mc.bot,query.Message.Chat.ID,roomID,msgID) //Check if room is full, else start game
@@ -154,13 +155,25 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 	}
 }
 
-func (mc *MessageController) FindGameController (chatID int64) (*GameController,error){
-	for _,controller := range mc.GameControllers{
-		if controller.chatID == chatID{
-			return controller,nil
+
+func (mc *MessageController) FindGameController (e interface{}) (*GameController,error){
+	switch m := e.(type) {
+	case int64: //chatID
+		for _,controller := range mc.GameControllers{
+			if controller.chatID == m{
+				return controller,nil
+			}
 		}
+	case *tgbotapi.User:
+		for _,controller := range mc.GameControllers{
+				for _,player := range controller.Game.Players{
+					if player == m{
+						return controller,nil
+					}
+				}
+			}
 	}
-	return nil,errors.New("No controller found")
+	return nil,errors.New("no controller found/user not found")
 }
 
 func (mc *MessageController) RemoveGameController (chatID int64){

@@ -5,13 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"strconv"
-
+	// "strconv"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 type Game struct{
-	bot *tgbotapi.BotAPI
+	Bot *tgbotapi.BotAPI
 	ChatID int64
 	ID uint32
 	Players []*tgbotapi.User
@@ -23,7 +22,7 @@ type Game struct{
 
 func NewGame (bot *tgbotapi.BotAPI, chatID int64) *Game{
 	return &Game{
-		bot:bot,
+		Bot:bot,
 		ChatID: chatID,
 		ID: rand.Uint32(),
 		Players: []*tgbotapi.User{},
@@ -41,37 +40,25 @@ func (g *Game) StartGame (){
 		g.deck.shuffled = true
 		tmp := g.deck.cards
 		g.hands = append(g.hands, Hand{g.Players[0],tmp[:13]})
-		g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
-		g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
-		g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
+		// g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
+		// g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
+		// g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
 
-		// var label []string
-		// var data []string
+			// utils.SendMessage(g.bot,g.ChatID,"Take a look at your hands @%s\n@%s\n@%s\n@%s\n", g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName)
+		button := tgbotapi.NewInlineKeyboardButtonData("Press me", fmt.Sprintf("show_hand:%d",g.ID))
 
-		//Print out hands
-		var cards []tgbotapi.InlineQueryResultArticle
-		for _,e := range g.hands{
-			fmt.Printf("Player %s\n", e.player.UserName)
-			for idx,card := range e.cards{
-				// data = append(data, fmt.Sprintf("%s_%d",card.Suit,card.Rank))
-				// label = append(label, fmt.Sprintf("%s %d",card.Suit,card.Rank))
-				cards = append(cards, tgbotapi.NewInlineQueryResultArticle(strconv.Itoa(idx),fmt.Sprintf("%s %d",card.Suit,card.Rank),fmt.Sprintf("%s_%d",card.Suit,card.Rank)))
-			}
-			var cardInterfaces []interface{}
-			for _,card := range cards{
-				cardInterfaces = append(cardInterfaces, card)
-			}
-			inlineConfig:= tgbotapi.InlineConfig{
-				InlineQueryID: strconv.Itoa(e.player.ID),
-				Results: cardInterfaces,
-			}
-			g.bot.AnswerInlineQuery(inlineConfig)
-		}
+		// Create an inline keyboard markup with the button
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(button))
 
+		// Create a message with the inline keyboard
+		msg := tgbotapi.NewMessage(g.ChatID, "Press the button:")
+		msg.ReplyMarkup = keyboard
 
-
+		// Send the message to the chat
+		g.Bot.Send(msg)
 	}
 }
+
 
 func (g *Game) FindPlayer (user *tgbotapi.User) (bool,int){
 	for idx,player := range g.Players{
@@ -104,14 +91,23 @@ func (g *Game) RemovePlayer (user *tgbotapi.User) (error){
 }
 
 func (g *Game) CheckPlayers (bot *tgbotapi.BotAPI, chatID int64, roomID uint32,msgID int){
-	if len(g.Players) == 4{
+	if len(g.Players) == 1{
 		utils.DeleteButton(bot,chatID,msgID)
-		utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s",roomID,g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName))
-		// utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s",roomID,g.Players[0].UserName))
+		// utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s",roomID,g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName))
+		utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s",roomID,g.Players[0].UserName))
 		g.StartGame()
 	} else{
 		fmt.Println("Room is not full...")
 	}
+}
+
+func (g *Game) GetHand (idx int) (Hand,error){
+	for index,hand := range g.hands{
+		if index==idx{
+			return hand,nil
+		}
+	}
+	return Hand{},errors.New("Hand not found")
 }
 
 
