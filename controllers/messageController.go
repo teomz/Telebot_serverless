@@ -32,6 +32,7 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
 //Listener
 func (mc *MessageController) StartListening() {
 
+
 	if update.Message != nil{
 		mc.HandleMessage(update)
 		

@@ -9,21 +9,8 @@ import (
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 
-	body, _ := ioutil.ReadAll(r.Body)
-
-	var update tgbotapi.Update
-
-	err := json.Unmarshal(body, &update)
-
-	if err != nil {
-
-		log.Println(err)
-
-		return
-
-	}
+	updates := ListenForWebhookRespReqFormat(w,r)
 
 	bot := &tgbotapi.BotAPI{
 
@@ -38,6 +25,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 
 	MessageController := controllers.NewMessageController(bot)
-	MessageController.StartListening()
 
+	for update := range updates:
+		MessageController.StartListening()
 }
