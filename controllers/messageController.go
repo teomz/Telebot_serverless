@@ -98,6 +98,7 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 				mc.AddGameController(&gameController)
 				mc.PrintAllControllers()
 				gameController.StartNewGame()
+				fmt.Println("Length of Game Controller in play_game:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 			} else {
 				utils.SendMessage(mc.bot, update.Message.Chat.ID, fmt.Sprintf("%s, a game is already ongoing...", update.Message.From.UserName))
 			}
