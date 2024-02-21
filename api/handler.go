@@ -9,24 +9,26 @@ import (
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	// Initialize the bot API with the bot token
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
-	if err != nil {
-		http.Error(w, "Failed to initialize bot", http.StatusInternalServerError)
-		return
+
+	// Initialize the BotAPI instance with the bot token
+	bot := &tgbotapi.BotAPI{
+		Token:  os.Getenv("TELEGRAM_APITOKEN"),
+		Client: &http.Client{},
+		Buffer: 100,
 	}
 
 	// Set the API endpoint (optional)
 	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
 
 	// Create a new MessageController instance
-	messageController := controllers.NewMessageController(bot)
+	MessageController := controllers.NewMessageController(bot)
 
-	// Listen for webhook updates using bot.ListenForWebhook
-	updates := bot.ListenForWebhook("/" + bot.Token)
+	// Listen for webhook updates using bot.ListenForWebhookRespReqFormat
+	// updates := bot.ListenForWebhookRespReqFormat(w, r)
 
 	// Process incoming updates
-	for update := range updates {
-		messageController.StartListening(update)
-	}
+	var update tgbotapi.Update
+
+	MessageController.StartListening(update)
+
 }
