@@ -3,9 +3,10 @@ package main
 import (
 	"bridge/controllers"
 	"log"
+	"net/http"
 	"os"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 )
 
@@ -23,10 +24,16 @@ func main() {
 	}
 
 	// Create a new bot instance
-	bot, err := tgbotapi.NewBotAPI(botToken)
-	if err != nil {
-		log.Fatal(err)
+	bot := &tgbotapi.BotAPI{
+
+		Token: botToken,
+
+		Client: &http.Client{},
+
+		Buffer: 100,
 	}
+
+	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
 
 	MessageController := controllers.NewMessageController(bot)
 	MessageController.StartListening()
