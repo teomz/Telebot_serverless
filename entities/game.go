@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	// "strconv"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Game struct{
@@ -14,9 +14,9 @@ type Game struct{
 	ChatID int64
 	ID uint32
 	Players []*tgbotapi.User
-	deck Deck
+	Deck Deck
 	// currentBid Bid
-	hands []Hand
+	Hands []Hand
 	InProgress bool
 }
 
@@ -26,23 +26,23 @@ func NewGame (bot *tgbotapi.BotAPI, chatID int64) *Game{
 		ChatID: chatID,
 		ID: rand.Uint32(),
 		Players: []*tgbotapi.User{},
-		deck : *NewDeck(),
+		Deck : *NewDeck(),
 		// currentBid: Bid{},
-		hands: []Hand{},
+		Hands: []Hand{},
 		InProgress: false,
 	}
 }
 
 // TODO
 func (g *Game) StartGame (){
-	if !g.deck.shuffled{
-		g.deck.Shuffle()
-		g.deck.shuffled = true
-		tmp := g.deck.cards
-		g.hands = append(g.hands, Hand{g.Players[0],tmp[:13]})
-		g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
-		g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
-		g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
+	if !g.Deck.shuffled{
+		g.Deck.Shuffle()
+		g.Deck.shuffled = true
+		tmp := g.Deck.cards
+		g.Hands = append(g.Hands, Hand{g.Players[0],tmp[:13]})
+		// g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
+		// g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
+		// g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
 	}
 }
 
@@ -78,10 +78,11 @@ func (g *Game) RemovePlayer (user *tgbotapi.User) (error){
 }
 
 func (g *Game) CheckPlayers (bot *tgbotapi.BotAPI, chatID int64, roomID uint32,msgID int){
-	if len(g.Players) == 4{
+	   if len(g.Players) == 1{
+	// if len(g.Players) == 4{
 		utils.DeleteButton(bot,chatID,msgID)
-		utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s",roomID,g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName))
-		// utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s",roomID,g.Players[0].UserName))
+		// utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s",roomID,g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName))
+		utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s",roomID,g.Players[0].UserName))
 		g.StartGame()
 	} else{
 		fmt.Println("Room is not full...")
@@ -89,7 +90,7 @@ func (g *Game) CheckPlayers (bot *tgbotapi.BotAPI, chatID int64, roomID uint32,m
 }
 
 func (g *Game) GetHand (idx int) (Hand,error){
-	for index,hand := range g.hands{
+	for index,hand := range g.Hands{
 		if index==idx{
 			return hand,nil
 		}
