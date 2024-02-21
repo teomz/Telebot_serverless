@@ -51,7 +51,9 @@ func (mc *MessageController) StartListening(w http.ResponseWriter, r *http.Reque
 				log.Println(err)
 			}
 		}
+		mc.ExportStateToFile("small_state.json")
 	}
+	mc.ExportStateToFile("small_state.json")
 }
 
 func (mc *MessageController) CheckGameController(gc *GameController) bool {
