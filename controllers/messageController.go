@@ -158,7 +158,7 @@ func (mc *MessageController) HandleCallbackQuery (query *tgbotapi.CallbackQuery)
 				fmt.Println(err)
 			}else{
 				game := gc.Game
-				if len(game.Players) < 1{
+				if len(game.Players) < 4{
 						gc.NotifyAddPlayer(query.From,roomID,msgID)
 						game:= gc.Game
 						game.CheckPlayers(mc.bot,query.Message.Chat.ID,roomID,msgID) //Check if room is full, else start game

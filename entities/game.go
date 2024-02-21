@@ -40,9 +40,9 @@ func (g *Game) StartGame (){
 		g.deck.shuffled = true
 		tmp := g.deck.cards
 		g.hands = append(g.hands, Hand{g.Players[0],tmp[:13]})
-		// g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
-		// g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
-		// g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
+		g.hands = append(g.hands, Hand{g.Players[1],tmp[13:26]})
+		g.hands = append(g.hands, Hand{g.Players[2],tmp[26:39]})
+		g.hands = append(g.hands, Hand{g.Players[3],tmp[39:]})
 	}
 }
 
@@ -78,10 +78,10 @@ func (g *Game) RemovePlayer (user *tgbotapi.User) (error){
 }
 
 func (g *Game) CheckPlayers (bot *tgbotapi.BotAPI, chatID int64, roomID uint32,msgID int){
-	if len(g.Players) == 1{
+	if len(g.Players) == 4{
 		utils.DeleteButton(bot,chatID,msgID)
-		// utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s",roomID,g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName))
-		utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s",roomID,g.Players[0].UserName))
+		utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s\nPlayer 2: %s\nPlayer 3: %s\nPlayer 4: %s",roomID,g.Players[0].UserName,g.Players[1].UserName,g.Players[2].UserName,g.Players[3].UserName))
+		// utils.SendMessage(bot,chatID,fmt.Sprintf("Starting Room %d\n\nPlayer 1: %s",roomID,g.Players[0].UserName))
 		g.StartGame()
 	} else{
 		fmt.Println("Room is not full...")
