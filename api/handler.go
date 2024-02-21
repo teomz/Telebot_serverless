@@ -10,25 +10,25 @@ import (
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 
-	// Initialize the BotAPI instance with the bot token
 	bot := &tgbotapi.BotAPI{
-		Token:  os.Getenv("TELEGRAM_APITOKEN"),
+
+		Token: os.Getenv("TELEGRAM_APITOKEN"),
+
 		Client: &http.Client{},
+
 		Buffer: 100,
 	}
 
-	// Set the API endpoint (optional)
 	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
-
-	// Create a new MessageController instance
 	MessageController := controllers.NewMessageController(bot)
 
-	// Listen for webhook updates using bot.ListenForWebhookRespReqFormat
-	// updates := bot.ListenForWebhookRespReqFormat(w, r)
+	updates := bot.ListenForWebhookRespReqFormat(w, r)
+	for true {
+		for update := range updates {
+			MessageController.StartListening(update)
+		}
+	}
 
-	// Process incoming updates
-	var update tgbotapi.Update
-
-	MessageController.StartListening(update)
+	select {}
 
 }
