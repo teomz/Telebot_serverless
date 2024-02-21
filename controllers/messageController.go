@@ -62,12 +62,9 @@ func (mc *MessageController) CheckGameController(gc *GameController) bool {
 
 func (mc *MessageController) AddGameController(gc *GameController) {
 	if !mc.CheckGameController(gc) {
+		fmt.Println("Before append - Length:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 		mc.GameControllers = append(mc.GameControllers, gc)
-		if !mc.CheckGameController(gc) {
-			fmt.Println("Added game controller to list!")
-		} else {
-			fmt.Println("Game controller failed to add to list.")
-		}
+		fmt.Println("After append - Length:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 		return
 	} else {
 		fmt.Printf("From existing game controller: chat %d\n", gc.chatID)
@@ -236,6 +233,11 @@ func (mc *MessageController) FindGameController(e interface{}) (*GameController,
 				}
 			}
 		}
+	}
+
+	for _, controller := range mc.GameControllers {
+		fmt.Printf("Chat ID: ")
+		fmt.Println(int64(controller.chatID))
 	}
 	return nil, errors.New("no controller found/user not found")
 }
