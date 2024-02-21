@@ -30,7 +30,7 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
 }
 
 //Listener
-func (mc *MessageController) StartListening() {
+func (mc *MessageController) StartListening(update tgbotapi.Update) {
 
 
 	if update.Message != nil{
@@ -195,7 +195,7 @@ func (mc *MessageController) HandleInlineQuery (query *tgbotapi.InlineQuery) err
 					Results: stickers,
 				}
 
-				_, err := mc.bot(inlineConfig)
+				_, err := mc.bot.Request(inlineConfig)
 				if err != nil {
 					fmt.Println("Error answering inline query:", err)
 				}

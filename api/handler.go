@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
 	"bridge/controllers"
@@ -26,6 +26,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	MessageController := controllers.NewMessageController(bot)
 
-	for update := range updates:
-		MessageController.StartListening()
+	for update := range updates{
+		MessageController.StartListening(update)
+	}
 }
