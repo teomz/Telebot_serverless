@@ -10,8 +10,6 @@ import (
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 
-	updates := ListenForWebhookRespReqFormat(w, r)
-
 	bot := &tgbotapi.BotAPI{
 
 		Token: os.Getenv("TELEGRAM_APITOKEN"),
@@ -22,6 +20,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bot.SetAPIEndpoint(tgbotapi.APIEndpoint)
+
+	updates := bot.ListenForWebhookRespReqFormat(w, r)
 
 	MessageController := controllers.NewMessageController(bot)
 
