@@ -135,7 +135,7 @@ func (mc *MessageController) HandleCallbackQuery(query *tgbotapi.CallbackQuery) 
 	case "join_game":
 		// Respond to the button click
 		roomID, err := strconv.ParseUint(data, 10, 32)
-		fmt.Printf("Room ID: %d, user: %s pressed the button. Err: %s \n", roomID, user.UserName, err)
+		fmt.Printf("Room ID: %d, user: %s pressed the button.\n", roomID, user.UserName)
 		if err != nil {
 			fmt.Println(err)
 		} else {
@@ -211,7 +211,9 @@ func (mc *MessageController) FindGameController(e interface{}) (*GameController,
 	fmt.Println("Type of", e, ":", fmt.Sprintf("%T", e))
 	switch m := e.(type) {
 	case int64: //chatID
+		fmt.Println("Trigger this")
 		for _, controller := range mc.GameControllers {
+			fmt.Println(int64(controller.chatID))
 			if controller.chatID == m {
 				return controller, nil
 			}
