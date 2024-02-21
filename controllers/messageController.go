@@ -209,13 +209,7 @@ func (mc *MessageController) HandleInlineQuery(query *tgbotapi.InlineQuery) erro
 }
 
 func (mc *MessageController) FindGameController(e interface{}) (*GameController, error) {
-
-	if len(mc.GameControllers) < 1 {
-		fmt.Println("Game Controller is empty.")
-	} else {
-		fmt.Println("Finding Chat ID in game controller ...")
-	}
-
+	fmt.Println("Length of Game Controller:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 	switch m := e.(type) {
 	case int64: //chatID
 		for _, controller := range mc.GameControllers {
