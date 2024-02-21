@@ -34,29 +34,18 @@ func (mc *MessageController) StartListening() {
 
 	if update.Message != nil{
 		mc.HandleMessage(update)
-		continue
+		
 	}
 	if update.CallbackQuery != nil{
 		mc.HandleCallbackQuery(update.CallbackQuery)
-		continue
+		
 	}
 	if update.InlineQuery != nil{
 		err:=mc.HandleInlineQuery(update.InlineQuery)
 		if err!=nil{
 			log.Println(err)
-		}else{
-			continue
 		}
 	}
-		// if update.Message == nil{
-		// 	if update.CallbackQuery !=nil{
-		// 		mc.HandleCallbackQuery(update.CallbackQuery)
-		// 	} else{
-		// 		continue
-		// 	}
-		// } else{
-		// 	mc.HandleMessage(update)
-		// }
 }
 
 func (mc *MessageController) CheckGameController (gc *GameController) bool{
@@ -205,7 +194,7 @@ func (mc *MessageController) HandleInlineQuery (query *tgbotapi.InlineQuery) err
 					Results: stickers,
 				}
 
-				_, err := mc.bot.(inlineConfig)
+				_, err := mc.bot(inlineConfig)
 				if err != nil {
 					fmt.Println("Error answering inline query:", err)
 				}
