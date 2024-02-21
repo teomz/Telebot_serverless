@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func CreateButton(label, data string) tgbotapi.InlineKeyboardButton {
