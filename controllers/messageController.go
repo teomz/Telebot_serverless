@@ -31,27 +31,23 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController{
 
 //Listener
 func (mc *MessageController) StartListening() {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	fmt.Println("Start Listening...")
-	updates := mc.bot.GetUpdatesChan(u)
-	for update := range updates {
-		if update.Message != nil{
-			mc.HandleMessage(update)
+
+	if update.Message != nil{
+		mc.HandleMessage(update)
+		continue
+	}
+	if update.CallbackQuery != nil{
+		mc.HandleCallbackQuery(update.CallbackQuery)
+		continue
+	}
+	if update.InlineQuery != nil{
+		err:=mc.HandleInlineQuery(update.InlineQuery)
+		if err!=nil{
+			log.Println(err)
+		}else{
 			continue
 		}
-		if update.CallbackQuery != nil{
-			mc.HandleCallbackQuery(update.CallbackQuery)
-			continue
-		}
-		if update.InlineQuery != nil{
-			err:=mc.HandleInlineQuery(update.InlineQuery)
-			if err!=nil{
-				log.Println(err)
-			}else{
-				continue
-			}
-		}
+	}
 		// if update.Message == nil{
 		// 	if update.CallbackQuery !=nil{
 		// 		mc.HandleCallbackQuery(update.CallbackQuery)
@@ -61,7 +57,6 @@ func (mc *MessageController) StartListening() {
 		// } else{
 		// 	mc.HandleMessage(update)
 		// }
-	}
 }
 
 func (mc *MessageController) CheckGameController (gc *GameController) bool{
