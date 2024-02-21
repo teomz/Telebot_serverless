@@ -31,7 +31,7 @@ func NewMessageController(bot *tgbotapi.BotAPI) *MessageController {
 }
 
 // Listener
-func (mc *MessageController) StartListening(w *http.ResponseWriter, r *http.Request) {
+func (mc *MessageController) StartListening(w http.ResponseWriter, r *http.Request) {
 	updates := mc.bot.ListenForWebhookRespReqFormat(w, r)
 	for update := range updates {
 		if update.Message != nil {
