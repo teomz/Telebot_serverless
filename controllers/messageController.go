@@ -125,6 +125,7 @@ func (mc *MessageController) HandleMessage(update tgbotapi.Update) {
 // Callback Query Handler
 func (mc *MessageController) HandleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Extract relevant information from the callback query
+	fmt.Println("Length of Game Controller in HCQ:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 	user := query.From
 	msgID := query.Message.MessageID
 	parts := strings.Split(query.Data, ":")
@@ -209,7 +210,7 @@ func (mc *MessageController) HandleInlineQuery(query *tgbotapi.InlineQuery) erro
 }
 
 func (mc *MessageController) FindGameController(e interface{}) (*GameController, error) {
-	fmt.Println("Length of Game Controller:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
+	fmt.Println("Length of Game Controller in FGC:", len(mc.GameControllers), "Capacity:", cap(mc.GameControllers))
 	switch m := e.(type) {
 	case int64: //chatID
 		for _, controller := range mc.GameControllers {
@@ -227,11 +228,6 @@ func (mc *MessageController) FindGameController(e interface{}) (*GameController,
 				}
 			}
 		}
-	}
-
-	for _, controller := range mc.GameControllers {
-		fmt.Printf("Chat ID: ")
-		fmt.Println(int64(controller.chatID))
 	}
 	return nil, errors.New("no controller found/user not found")
 }
