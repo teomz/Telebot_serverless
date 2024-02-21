@@ -63,7 +63,11 @@ func (mc *MessageController) CheckGameController(gc *GameController) bool {
 func (mc *MessageController) AddGameController(gc *GameController) {
 	if !mc.CheckGameController(gc) {
 		mc.GameControllers = append(mc.GameControllers, gc)
-		fmt.Println("Added game controller to list!")
+		if !mc.CheckGameController(gc) {
+			fmt.Println("Added game controller to list!")
+		} else {
+			fmt.Println("Game controller failed to add to list.")
+		}
 		return
 	} else {
 		fmt.Printf("From existing game controller: chat %d\n", gc.chatID)
