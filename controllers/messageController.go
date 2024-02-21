@@ -38,10 +38,12 @@ func (mc *MessageController) StartListening(w http.ResponseWriter, r *http.Reque
 	for update := range updates {
 		if update.Message != nil {
 			mc.HandleMessage(update)
+			mc.ExportStateToFile("small_state.json")
 
 		}
 		if update.CallbackQuery != nil {
 			mc.HandleCallbackQuery(update.CallbackQuery)
+			mc.ExportStateToFile("small_state.json")
 
 		}
 		if update.InlineQuery != nil {
@@ -50,10 +52,9 @@ func (mc *MessageController) StartListening(w http.ResponseWriter, r *http.Reque
 			if err != nil {
 				log.Println(err)
 			}
+			mc.ExportStateToFile("small_state.json")
 		}
-		mc.ExportStateToFile("small_state.json")
 	}
-	mc.ExportStateToFile("small_state.json")
 }
 
 func (mc *MessageController) CheckGameController(gc *GameController) bool {
