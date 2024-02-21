@@ -212,11 +212,17 @@ func (mc *MessageController) HandleInlineQuery(query *tgbotapi.InlineQuery) erro
 }
 
 func (mc *MessageController) FindGameController(e interface{}) (*GameController, error) {
-	fmt.Println("Type of", e, ":", fmt.Sprintf("%T", e))
+
+	if len(mc.GameControllers) < 1 {
+		fmt.Println("Game Controller is empty.")
+	} else {
+		fmt.Println("Finding Chat ID in game controller ...")
+	}
+
 	switch m := e.(type) {
 	case int64: //chatID
-		fmt.Println("Trigger this")
 		for _, controller := range mc.GameControllers {
+			fmt.Printf("Chat ID: ")
 			fmt.Println(int64(controller.chatID))
 			if controller.chatID == m {
 				return controller, nil
